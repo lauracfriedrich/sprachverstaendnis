@@ -80,7 +80,7 @@ function makeTrial(storyId, version) {
 
 const experiment = {
   1: {
-    intro: "intro.mp4",
+    intro: "Intro.mp4",
     trials: [
       makeTrial("2B", "Criticism"),
       makeTrial("6B", "Control"),
@@ -95,11 +95,11 @@ const experiment = {
       makeTrial("3B", "Control"),
       makeTrial("5A", "Irony")
     ],
-    end: "end.mp4"
+    end: "End.mp4"
   },
 
   2: {
-    intro: "intro.mp4",
+    intro: "Intro.mp4",
     trials: [
       makeTrial("1B", "Criticism"),
       makeTrial("5B", "Control"),
@@ -114,11 +114,11 @@ const experiment = {
       makeTrial("2B", "Control"),
       makeTrial("5A", "Irony")
     ],
-    end: "end.mp4"
+    end: "End.mp4"
   },
 
   3: {
-    intro: "intro.mp4",
+    intro: "Intro.mp4",
     trials: [
       makeTrial("3B", "Criticism"),
       makeTrial("4B", "Control"),
@@ -133,11 +133,11 @@ const experiment = {
       makeTrial("1B", "Control"),
       makeTrial("5A", "Irony")
     ],
-    end: "end.mp4"
+    end: "End.mp4"
   },
 
   4: {
-    intro: "intro.mp4",
+    intro: "Intro.mp4",
     trials: [
       makeTrial("2A", "Criticism"),
       makeTrial("6A", "Control"),
@@ -152,11 +152,11 @@ const experiment = {
       makeTrial("3A", "Control"),
       makeTrial("5B", "Irony")
     ],
-    end: "end.mp4"
+    end: "End.mp4"
   },
 
   5: {
-    intro: "intro.mp4",
+    intro: "Intro.mp4",
     trials: [
       makeTrial("1A", "Criticism"),
       makeTrial("5A", "Control"),
@@ -171,11 +171,11 @@ const experiment = {
       makeTrial("2A", "Control"),
       makeTrial("5B", "Irony")
     ],
-    end: "end.mp4"
+    end: "End.mp4"
   },
 
   6: {
-    intro: "intro.mp4",
+    intro: "Intro.mp4",
     trials: [
       makeTrial("3A", "Criticism"),
       makeTrial("4A", "Control"),
@@ -190,7 +190,7 @@ const experiment = {
       makeTrial("1A", "Control"),
       makeTrial("5B", "Irony")
     ],
-    end: "end.mp4"
+    end: "End.mp4"
   }
 };
 
