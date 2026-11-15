@@ -1,7 +1,7 @@
 
 <template>
   <div class="start-page">
-    <h1>ToM 1st order</h1>
+    <h1>Sprachverständnis</h1>
 
     <div class="form-group">
       <label for="participant-id">
@@ -25,6 +25,10 @@
         </option>
         <option value="1">Liste 1</option>
         <option value="2">Liste 2</option>
+        <option value="3">Liste 3</option>
+        <option value="4">Liste 4</option>
+        <option value="5">Liste 5</option>
+        <option value="6">Liste 6</option>
       </select>
     </div>
 

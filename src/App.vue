@@ -1,4 +1,3 @@
-
 <template>
   <div id="app">
 
@@ -11,32 +10,38 @@
     <!-- Videos -->
     <VideoScreen
       v-else-if="phase === 'intro' || phase === 'trialVideo' || phase === 'end'"
-      :key="phase + '-' + trialIndex"
+      :key="'video-' + phase + '-' + trialIndex"
       :video-src="currentVideo"
       @finished="onVideoFinished"
     />
 
-    <!-- Antwortauswahl -->
+    <!-- Fragen -->
     <ResponseScreen
-      v-else-if="phase === 'response'"
+      v-else-if="phase === 'intention' || phase === 'emotion' || phase === 'situation' || phase === 'why'"
+      :key="'response-' + phase + '-' + trialIndex"
       :images="currentImages"
+      :audio-src="currentAudioSrc"
+      :second-audio-src="secondAudioSrc"
+      :third-audio-src="thirdAudioSrc"
+      :show-continue="phase === 'why'"
       @answer="saveAnswer"
+      @continue="continueAfterWhy"
     />
 
-<!-- Abschluss -->
-<div v-else-if="phase === 'done'" class="finished">
-  <h1>Vielen Dank!</h1>
-  <p>Das Experiment ist beendet.</p>
-  <p>Versuchsperson: {{ participantId }}</p>
-  <p>
-  Bisher auf diesem Gerät gespeichert:
-  {{ savedParticipantCount }} Teilnehmende
-</p>
+    <!-- Abschluss -->
+    <div v-else-if="phase === 'done'" class="finished">
+      <h1>Vielen Dank!</h1>
+      <p>Das Experiment ist beendet.</p>
+      <p>Versuchsperson: {{ participantId }}</p>
+      <p>
+        Bisher auf diesem Gerät gespeichert:
+        {{ savedParticipantCount }} Teilnehmende
+      </p>
 
-  <button @click="exportData">
-    Daten herunterladen (CSV)
-  </button>
-</div>
+      <button @click="exportData">
+        Daten herunterladen (CSV)
+      </button>
+    </div>
 
   </div>
 </template>
@@ -46,7 +51,7 @@ import StartPage from "./components/StartPage.vue";
 import VideoScreen from "./components/VideoScreen.vue";
 import ResponseScreen from "./components/ResponseScreen.vue";
 
-import experiment, { getTrialImages } from "./experiment.js";
+import experiment from "./experiment.js";
 
 export default {
   name: "App",
@@ -65,40 +70,106 @@ export default {
       selectedList: null,
 
       trialIndex: 0,
-      participantTrials: [],
-
       answers: [],
+      currentTrialData: null,
+
       savedParticipantCount: 0
     };
   },
 
   created() {
-  this.updateSavedParticipantCount();
+    this.updateSavedParticipantCount();
   },
 
   computed: {
-    currentVideo() {
-      const list = experiment[this.selectedList];
+    currentTrial() {
+      if (this.selectedList === null) return null;
 
+      return experiment[this.selectedList].trials[this.trialIndex];
+    },
+
+    currentVideo() {
       if (this.phase === "intro") {
-        return `${process.env.BASE_URL}videos/${list.intro}`;
+        return `${process.env.BASE_URL}videos/${experiment[this.selectedList].intro}`;
       }
+
       if (this.phase === "trialVideo") {
-        return `${process.env.BASE_URL}videos/${list.trials[this.trialIndex]}`;
+        return `${process.env.BASE_URL}videos/${this.currentTrial.video}`;
       }
+
       if (this.phase === "end") {
-        return `${process.env.BASE_URL}videos/${list.end}`;
+        return `${process.env.BASE_URL}videos/${experiment[this.selectedList].end}`;
       }
 
       return "";
     },
 
     currentImages() {
-      const videoName =
-        this.participantTrials[this.trialIndex];
+      if (!this.currentTrial) return [];
 
-      return getTrialImages(videoName);
-    }
+      let images = [];
+
+      if (this.phase === "intention") {
+        images = this.currentTrial.intentionImages.map((file, index) => ({
+          label: String(index + 1),
+          src: `${process.env.BASE_URL}images/intention/${file}`
+        }));
+      }
+
+      if (this.phase === "emotion") {
+        images = this.currentTrial.emotionImages.map(emotion => ({
+          label: emotion.replace("emotion_", "").replace(".png", ""),
+          src: `${process.env.BASE_URL}images/emotion/${emotion}`
+        }));
+      }
+
+      if (this.phase === "situation") {
+        images = this.currentTrial.situationImages.map((file, index) => ({
+          label: String(index + 1),
+          src: `${process.env.BASE_URL}images/situation/${file}`
+        }));
+      }
+
+      // Antwortbilder zufällig links und rechts anordnen
+      return [...images].sort(() => Math.random() - 0.5);
+    },
+
+    currentAudioSrc() {
+      if (this.phase === "intention") {
+        return `${process.env.BASE_URL}audios/intention.mp3`;
+      }
+
+      if (this.phase === "emotion") {
+        return `${process.env.BASE_URL}audios/emotion.mp3`;
+      }
+
+      if (this.phase === "situation") {
+        return `${process.env.BASE_URL}audios/${this.currentTrial.situationAudio}`;
+      }
+
+      if (this.phase === "why") {
+        return `${process.env.BASE_URL}audios/why.mp3`;
+      }
+
+      return "";
+    },
+
+    secondAudioSrc() {
+      if (this.phase === "emotion") {
+
+        return `${process.env.BASE_URL}audios/statements/${this.currentTrial.statementAudio}`;
+      }
+
+      return "";
+    },
+
+    thirdAudioSrc() {
+      if (this.phase === "emotion") {
+        return `${process.env.BASE_URL}audios/${this.currentTrial.reminderAudio}`;
+      }
+
+      return "";
+    },
   },
 
   methods: {
@@ -106,50 +177,108 @@ export default {
       this.participantId = data.participantId;
       this.selectedList = data.list;
 
-      this.participantTrials =
-        experiment[this.selectedList].trials;
-
       this.trialIndex = 0;
       this.answers = [];
+      this.currentTrialData = null;
 
-      // Startdaten sofort lokal speichern
       this.saveLocally();
-
       this.phase = "intro";
     },
 
     onVideoFinished() {
       if (this.phase === "intro") {
+        this.prepareCurrentTrial();
         this.phase = "trialVideo";
       } else if (this.phase === "trialVideo") {
-        this.phase = "response";
+        this.phase = "intention";
       } else if (this.phase === "end") {
         this.phase = "done";
       }
     },
 
-    saveAnswer(answer) {
-      const videoName =
-        this.participantTrials[this.trialIndex];
+    prepareCurrentTrial() {
+      const trial = this.currentTrial;
 
-      const category = experiment[this.selectedList].answers[videoName][answer];
-
-      this.answers.push({
+      this.currentTrialData = {
         participantId: this.participantId,
         list: this.selectedList,
         trial: this.trialIndex + 1,
-        video: videoName,
-        answer: answer,
-        category: category,
-        timestamp: new Date().toISOString()
-      });
+        storyId: trial.storyId,
+        version: trial.version,
+        video: trial.video,
 
-      // Antwort sofort lokal speichern
+        intentionAnswer: "",
+        intentionCorrect: "",
+
+        emotionAnswer: "",
+        emotionCorrect: "",
+
+        situationAnswer: "",
+        situationCorrect: "",
+
+        timestamp: ""
+      };
+
+      this.answers.push(this.currentTrialData);
       this.saveLocally();
+    },
 
-      // Direkt zum nächsten Durchgang
-      if (this.trialIndex < this.participantTrials.length - 1) {
+    saveAnswer(answer) {
+      const trial = this.currentTrial;
+      const data = this.currentTrialData;
+
+      if (this.phase === "intention") {
+        data.intentionAnswer = answer;
+        data.intentionCorrect = answer === "1" ? "correct" : "incorrect";
+
+        this.phase = "emotion";
+      }
+
+      else if (this.phase === "emotion") {
+        data.emotionAnswer = answer;
+        data.emotionCorrect =
+          answer === trial.emotionCorrectAnswer
+            ? "correct"
+            : "incorrect";
+
+        this.phase = "situation";
+      }
+
+      else if (this.phase === "situation") {
+        data.situationAnswer = answer;
+        data.situationCorrect =
+          answer === trial.situationCorrectAnswer
+            ? "correct"
+            : "incorrect";
+
+        data.timestamp = new Date().toISOString();
+
+        this.saveLocally();
+
+        const shouldAskWhy =
+          (trial.version === "irony" && data.situationCorrect === "correct") ||
+          (trial.version !== "irony" && data.situationCorrect === "incorrect");
+
+        if (shouldAskWhy) {
+          this.phase = "why";
+          return;
+        }
+
+        this.advanceTrial();
+        return;
+      }
+
+      this.saveLocally();
+    },
+
+    continueAfterWhy() {
+      this.advanceTrial();
+    },
+
+    advanceTrial() {
+      if (this.trialIndex < experiment[this.selectedList].trials.length - 1) {
         this.trialIndex++;
+        this.prepareCurrentTrial();
         this.phase = "trialVideo";
       } else {
         this.phase = "end";
@@ -157,7 +286,7 @@ export default {
     },
 
     saveLocally() {
-      const storageKey = "tom1_experiment_data";
+      const storageKey = "sprachverstaendnis_experiment_data";
 
       const existingData = JSON.parse(
         localStorage.getItem(storageKey) || "[]"
@@ -179,41 +308,56 @@ export default {
         storageKey,
         JSON.stringify(otherParticipants)
       );
+
       this.updateSavedParticipantCount();
     },
 
     exportData() {
-      const storageKey = "tom1_experiment_data";
+      const storageKey = "sprachverstaendnis_experiment_data";
 
       const allData = JSON.parse(
         localStorage.getItem(storageKey) || "[]"
-     );
+      );
 
-      // Eine Zeile pro beantwortetem Trial
       const rows = [];
 
       allData.forEach(participant => {
         participant.answers.forEach(answer => {
           rows.push({
-            participantId: `="${answer.participantId}"`,            
+            participantId: `="${answer.participantId}"`,
             list: answer.list,
             trial: answer.trial,
+            storyId: answer.storyId,
+            version: answer.version,
             video: answer.video,
-            answer: answer.answer,
-            category: answer.category,
+
+            intentionAnswer: answer.intentionAnswer,
+            intentionCorrect: answer.intentionCorrect,
+
+            emotionAnswer: answer.emotionAnswer,
+            emotionCorrect: answer.emotionCorrect,
+
+            situationAnswer: answer.situationAnswer,
+            situationCorrect: answer.situationCorrect,
+
             timestamp: answer.timestamp
           });
         });
       });
 
-      // CSV-Kopfzeile
       const headers = [
         "participantId",
         "list",
         "trial",
+        "storyId",
+        "version",
         "video",
-        "answer",
-        "category",
+        "intentionAnswer",
+        "intentionCorrect",
+        "emotionAnswer",
+        "emotionCorrect",
+        "situationAnswer",
+        "situationCorrect",
         "timestamp"
       ];
 
@@ -226,7 +370,6 @@ export default {
         )
       ].join("\n");
 
-      // CSV-Datei erstellen und herunterladen
       const blob = new Blob(
         ["\uFEFF" + csvContent],
         { type: "text/csv;charset=utf-8;" }
@@ -236,13 +379,14 @@ export default {
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = "tom1_experiment_data.csv";
+      link.download = "sprachverstaendnis_experiment_data.csv";
       link.click();
 
       URL.revokeObjectURL(url);
     },
+
     updateSavedParticipantCount() {
-      const storageKey = "tom1_experiment_data";
+      const storageKey = "sprachverstaendnis_experiment_data";
 
       const existingData = JSON.parse(
         localStorage.getItem(storageKey) || "[]"
