@@ -17,7 +17,7 @@
 
     <!-- Bild bei der Why-Frage -->
     <div v-if="showContinue" class="options why-image">
-      <img src="/images/why_image.png" alt="" />
+      <img :src="`${publicPath}images/why_image.png`" alt="" />
     </div>
 
     <!-- Replay-Button -->
@@ -81,7 +81,8 @@ export default {
       audioPlayer: null,
       playbackId: 0,
       isPlaying: false,
-      questionFinished: false
+      questionFinished: false,
+      publicPath: process.env.BASE_URL
     };
   },
 
