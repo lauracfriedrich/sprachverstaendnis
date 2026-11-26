@@ -20,13 +20,24 @@
       <img :src="`${publicPath}images/why_image.png`" alt="" />
     </div>
 
+    <!-- Aussage der Mutter erneut abspielen -->
+    <button
+      v-if="statementAudioSrc"
+      class="statement-button"
+      @click="playStatement"
+      aria-label="Aussage der Mutter erneut abspielen"
+      title="Aussage nochmal anhören"
+    >
+      🔊
+    </button>
+
     <!-- Replay-Button -->
     <button
       v-if="audioSrc"
       class="replay-button"
       @click="playAudios"
       aria-label="Audios erneut abspielen"
-      title="Nochmal anhören"
+      title="Frage nochmal anhören"
     >
       ↻
     </button>
@@ -66,6 +77,11 @@ export default {
     },
 
     thirdAudioSrc: {
+      type: String,
+      default: ""
+    },
+
+    statementAudioSrc: {
       type: String,
       default: ""
     },
@@ -156,6 +172,27 @@ export default {
       }
     },
 
+    async playStatement() {
+      this.stopAudio();
+
+      const currentPlaybackId = ++this.playbackId;
+      this.isPlaying = true;
+
+      const audio = new Audio(this.statementAudioSrc);
+      this.audioPlayer = audio;
+
+      await new Promise(resolve => {
+        audio.addEventListener("ended", resolve, { once: true });
+        audio.addEventListener("error", resolve, { once: true });
+        audio.play().catch(resolve);
+      });
+
+      if (currentPlaybackId === this.playbackId) {
+        this.isPlaying = false;
+        this.audioPlayer = null;
+      }
+    },
+
     stopAudio() {
       if (this.audioPlayer) {
         this.audioPlayer.pause();
@@ -240,6 +277,31 @@ export default {
 .image-option:disabled {
   cursor: default;
   opacity: 0.55;
+}
+
+.statement-button {
+  position: absolute;
+  top: 0px;
+  left: 15px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  font-size: 22px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  color: black;
+
+  cursor: pointer;
+  z-index: 10;
+  outline: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Replay-Button */

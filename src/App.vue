@@ -23,6 +23,7 @@
       :audio-src="currentAudioSrc"
       :second-audio-src="secondAudioSrc"
       :third-audio-src="thirdAudioSrc"
+      :statement-audio-src="statementAudioSrc"
       :show-continue="phase === 'why'"
       @answer="saveAnswer"
       @continue="continueAfterWhy"
@@ -169,6 +170,14 @@ export default {
       }
 
       return "";
+    },
+
+    statementAudioSrc() {
+      if (!this.currentTrial || !this.currentTrial.statementAudio) {
+        return "";
+      }
+
+      return `${process.env.BASE_URL}audios/statements/${this.currentTrial.statementAudio}`;
     },
   },
 
